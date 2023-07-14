@@ -1,0 +1,87 @@
+class VendingMachine:
+    def __init__(self):
+        self.states = {
+            'SELECT_DRINK': self.select_drink,
+            'ENTER_AMOUNT': self.enter_amount,
+            'DISPENSE_DRINK': self.dispense_drink,
+            'REFILL': self.refill_stock
+        }
+        self.transitions = {
+            'SELECT_DRINK': {'enter_code': 'ENTER_AMOUNT', 'refill': 'REFILL'},
+            'ENTER_AMOUNT': {'dispense': 'DISPENSE_DRINK'},
+            'DISPENSE_DRINK': {'select_drink': 'SELECT_DRINK', 'refill': 'REFILL'},
+            'REFILL': {'select_drink': 'SELECT_DRINK'}
+        }
+        self.juices = {
+            'PEPS': {'name': 'Pepsi', 'cost': 30, 'quantity': 50},
+            'MDEW': {'name': 'Mountain Dew', 'cost': 30, 'quantity': 50},
+            'DPEP': {'name': 'Dr. Pepper', 'cost': 50, 'quantity': 50},
+            'COKE': {'name': 'Coke', 'cost': 20, 'quantity': 50},
+            'GATO': {'name': 'Gatorade', 'cost': 20, 'quantity': 50},
+            'DCOK': {'name': 'Diet Coke', 'cost': 30, 'quantity': 50},
+            'MINM': {'name': 'Minute Maid', 'cost': 25, 'quantity': 50},
+            'TROP': {'name': 'Tropicana', 'cost': 30, 'quantity': 50}
+        }
+        self.current_state = 'SELECT_DRINK'
+        self.selected_drink = None
+        self.amount_entered = 0
+
+    def show_menu(self):
+        print("Available Drinks:")
+        print("Sl. No.  Drink Code  Drink Name       Cost")
+        for i, (code, juice) in enumerate(self.juices.items(), start=1):
+            print(f"{i: <8}  {code: <10} {juice['name']: <15} ${juice['cost']: <3}")
+
+    def select_drink(self):
+        drink_code = input("Enter the drink code: ")
+        if drink_code == 'REFILL':
+            self.current_state = 'REFILL'
+            print("Stocks have been replenished. You can use the vending machine now.")
+        elif drink_code in self.juices:
+            juice = self.juices[drink_code]
+            if juice['quantity'] == 0:
+                print("This drink is sold out. Please choose another drink.")
+            else:
+                self.selected_drink = juice
+                self.current_state = 'ENTER_AMOUNT'
+                print(f"You have selected {juice['name']}.")
+                self.show_menu()  # Show menu after selecting a drink
+        else:
+            print("Invalid drink code. Please choose a valid drink.")
+
+    def enter_amount(self):
+        amount = float(input("Enter the amount: $"))
+        if amount >= self.selected_drink['cost']:
+            self.amount_entered = amount
+            self.current_state = 'DISPENSE_DRINK'
+            self.dispense_drink()
+        else:
+            print("Insufficient amount. Please enter a higher amount.")
+
+    def dispense_drink(self):
+        change = self.amount_entered - self.selected_drink['cost']
+        if change > 0:
+            print(f"Here is your {self.selected_drink['name']}. Please take your change: ${change:.2f}")
+        else:
+            print(f"Here is your {self.selected_drink['name']}. No change required.")
+        self.selected_drink['quantity'] -= 1
+        self.current_state = 'SELECT_DRINK'
+
+    def refill_stock(self):
+        for juice in self.juices.values():
+            juice['quantity'] = 50
+
+    def process_input(self, user_input):
+        if user_input in self.transitions[self.current_state]:
+            next_state = self.transitions[self.current_state][user_input]
+            self.states[next_state]()
+        else:
+            print("Invalid input. Please try again.")
+
+# Main program
+vending_machine = VendingMachine()
+vending_machine.show_menu()
+
+while True:
+    user_input = input("Enter your choice: ")
+    vending_machine.process_input(user_input)
